@@ -1,0 +1,25 @@
+{
+    "baseline": {
+        "enable": true,
+        "tfidf": false,
+        "model": "nb"
+    },
+    "optimized": {
+        "enable": true,
+        "tfidf": true,
+        "model": "svm",
+        "ngram": [1, 3]
+    },
+    "lstm": {
+        "enable": true,
+        "epochs": 20,
+        "nodes": 64,
+        "layers": 2,
+        "decrement": "half"
+    },
+    "pretrained": {
+        "enable": true,
+        "epochs": 1,
+        "model": "bert"
+    }
+}
