@@ -9,7 +9,7 @@ import argparse
 import json
 from sklearn.metrics import precision_recall_fscore_support
 
-import baseline as ldb
+import classic as ldc
 
 
 def create_arg_parser():
@@ -65,6 +65,19 @@ if __name__ == "__main__":
     # Read files
     X_train, Y_train = read_corpus(args.train_file)
     X_dev, Y_dev = read_corpus(args.train_file)
+    with open(args.model_params, "r") as fp:
+        params = json.load(fp)
+    bp = params["baseline"]
+    op = params["optimized"]
+    lp = params["lstm"]
+    pp = params["pretrained"]
 
-    baseline_pred = ldb.base_classifier(X_train, Y_train, X_dev)
-    evaluate(Y_dev, baseline_pred)
+    # Baseline
+    b_pred = ldc.classic_classifier(X_train, Y_train, X_dev,
+                                    bp["model"], bp["tfidf"])
+    evaluate(Y_dev, b_pred)
+
+    # Optimized
+    o_pred = ldc.classic_classifier(X_train, Y_train, X_dev,
+                                    op["model"], op["tfidf"], op["ngram"])
+    evaluate(Y_dev, o_pred)

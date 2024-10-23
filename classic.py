@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Baseline classifier
+# Classic classifier
 # Uses one of a variety of algorithms to produce baseline labels
 # Author: Wessel Heerema
 # Latest build: 17/10/2024
@@ -17,15 +17,17 @@ def identity(inp):
     return inp
 
 
-def base_classifier(X_train, Y_train, X_test, model="nb", tfidf=True):
-    '''Create and run baseline classifier'''
+def classic_classifier(X_train, Y_train, X_test,
+                       model="nb", tfidf=True, ngram=[1,1]):
+    '''Create and run classic classifier'''
     # Vectorize data
+    ngram_range = tuple(ngram)
     if tfidf:
         vec = TfidfVectorizer(preprocessor=identity, tokenizer=identity,
-                              ngram_range=(1,3))
+                              ngram_range=ngram_range)
     else:
         vec = CountVectorizer(preprocessor=identity, tokenizer=identity,
-                              ngram_range=(1,3))
+                              ngram_range=ngram_range)
     # Select algorithm
     algorithms = {
         'nb': MultinomialNB(),
