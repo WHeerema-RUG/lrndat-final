@@ -3,7 +3,7 @@
 # Compare four models for binary text classification:
 # Import text, get labels, produce Precision, Recall and F1 scores
 # Author: Wessel Heerema
-# Latest build: 17/10/2024
+# Latest build: 23/10/2024
 
 import argparse
 import json
