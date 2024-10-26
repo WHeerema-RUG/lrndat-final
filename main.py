@@ -3,7 +3,7 @@
 # Compare four models for binary text classification:
 # Import text, get labels, produce Precision, Recall and F1 scores
 # Author: Wessel Heerema
-# Latest build: 25/10/2024
+# Latest build: 26/10/2024
 
 import argparse
 import json
@@ -11,6 +11,7 @@ from sklearn.metrics import precision_recall_fscore_support
 
 import classic as ldc
 import lstm as ldl
+import bert as ldb
 
 
 def create_arg_parser():

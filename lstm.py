@@ -60,7 +60,10 @@ def create_model(Y_train, adam):
 
 def train_model(model, X_train, Y_train, X_dev, Y_dev,
                 batch_size=32, epochs=20, verb_bool=True, es_bool=True):
-    '''Train the model here. Note the different settings you can experiment with!'''
+    """Wrapper for model fitting, with adjustable batch size, epochs,
+    verbosity and early stopping
+    Can also be used for the BERT classifier
+    """
     if verb_bool:
         verbose = 1
     else:
