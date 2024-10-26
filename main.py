@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     # Read files
     X_train, Y_train = read_corpus(args.train_file)
-    X_dev, Y_dev = read_corpus(args.train_file)
+    X_dev, Y_dev = read_corpus(args.dev_file)
     with open(args.model_params, "r") as fp:
         params = json.load(fp)
     bp = params["baseline"]
@@ -85,6 +85,8 @@ if __name__ == "__main__":
     evaluate(Y_dev, o_pred)
 
     # LSTM
-    l_model = ldl.create_model(Y_train, lp["adam"])
-    l_pred = ldl.train_model(l_model, X_train, Y_train, X_dev, Y_dev)
-    evaluate(Y_dev, l_pred)
+    l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_embeddings(X_train, X_dev)
+    l_model = ldl.train_model(ldl.create_model(Y_train, lp["adam"]),
+                              Xtv, Ytb, Xdv, Ydb)
+    l_pred = l_model.predict(Ydb)
+    evaluate(ldl.result_transform(Ydb), ldl.result_transform(l_pred))
