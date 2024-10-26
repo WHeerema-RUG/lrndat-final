@@ -3,13 +3,14 @@
 # Compare four models for binary text classification:
 # Import text, get labels, produce Precision, Recall and F1 scores
 # Author: Wessel Heerema
-# Latest build: 23/10/2024
+# Latest build: 25/10/2024
 
 import argparse
 import json
 from sklearn.metrics import precision_recall_fscore_support
 
 import classic as ldc
+import lstm as ldl
 
 
 def create_arg_parser():
@@ -81,3 +82,8 @@ if __name__ == "__main__":
     o_pred = ldc.classic_classifier(X_train, Y_train, X_dev,
                                     op["model"], op["tfidf"], op["ngram"])
     evaluate(Y_dev, o_pred)
+
+    # LSTM
+    l_model = ldl.create_model(Y_train, lp["adam"])
+    l_pred = ldl.train_model(l_model, X_train, Y_train, X_dev, Y_dev)
+    evaluate(Y_dev, l_pred)

@@ -2,7 +2,7 @@
 # Classic classifier
 # Uses one of a variety of algorithms to produce baseline labels
 # Author: Wessel Heerema
-# Latest build: 17/10/2024
+# Latest build: 23/10/2024
 
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support

@@ -15,11 +15,13 @@
         "epochs": 20,
         "nodes": 64,
         "layers": 2,
-        "decrement": "half"
+        "decrement": "half",
+        "adam": true
     },
     "pretrained": {
         "enable": true,
         "epochs": 1,
-        "model": "bert"
+        "model": "bert",
+        "adam": true
     }
 }
