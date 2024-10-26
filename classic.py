@@ -31,7 +31,7 @@ def classic_classifier(X_train, Y_train, X_test,
     # Select algorithm
     algorithms = {
         'nb': MultinomialNB(),
-        'svc': LinearSVC(),
+        'svm': LinearSVC(),
         'knn': KNeighborsClassifier(n_neighbors=5)
     }
     classifier = Pipeline([('vec', vec), ('cls', algorithms[model])])

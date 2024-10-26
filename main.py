@@ -11,7 +11,7 @@ from sklearn.metrics import precision_recall_fscore_support
 
 import classic as ldc
 import lstm as ldl
-import bert as ldb
+import pretrained as ldb
 
 
 def create_arg_parser():
@@ -41,16 +41,19 @@ def create_arg_parser():
 def read_corpus(corpus_file, unseen=False):
     '''Extract docs and labels in a binary classification task'''
     documents = []
+    tok_texts = []
     labels = []
     with open(corpus_file, encoding='utf-8') as in_file:
         for line in in_file:
             tokens = line.strip().split()
             if not unseen:
-                documents.append(tokens[:-1])
+                tok_texts.append(tokens[:-1])
+                documents.append(" ".join(tokens[:-1]).strip())
                 labels.append(tokens[-1])
             else:
-                documents.append(tokens)
-    return documents, labels
+                tok_texts.append(tokens)
+                documents.append(" ".join(tokens[:-1]).strip())
+    return documents, tok_texts, labels
 
 
 def evaluate(gold, pred):
@@ -65,8 +68,8 @@ if __name__ == "__main__":
     args = create_arg_parser()
 
     # Read files
-    X_train, Y_train = read_corpus(args.train_file)
-    X_dev, Y_dev = read_corpus(args.dev_file)
+    X_train, X_traint, Y_train = read_corpus(args.train_file)
+    X_dev, X_devt, Y_dev = read_corpus(args.dev_file)
     with open(args.model_params, "r") as fp:
         params = json.load(fp)
     bp = params["baseline"]
@@ -75,23 +78,28 @@ if __name__ == "__main__":
     pp = params["pretrained"]
 
     # Baseline
-    b_pred = ldc.classic_classifier(X_train, Y_train, X_dev,
+    print("BASELINE")
+    b_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
                                     bp["model"], bp["tfidf"])
     evaluate(Y_dev, b_pred)
 
     # Optimized
-    o_pred = ldc.classic_classifier(X_train, Y_train, X_dev,
+    print("OPTIMIZED")
+    o_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
                                     op["model"], op["tfidf"], op["ngram"])
     evaluate(Y_dev, o_pred)
 
     # LSTM
-    l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_embeddings(X_train, X_dev)
-    l_model = ldl.train_model(ldl.create_model(Y_train, lp["adam"]),
-                              Xtv, Ytb, Xdv, Ydb)
+    print("LSTM")
+    l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
+                                                Y_train, Y_dev)
+    l_model = ldl.train_model(ldl.create_model(l_emb, lp["adam"]),
+                              Xtv, Ytb, Xdv, Ydb, batch_size=32)
     l_pred = l_model.predict(Ydb)
     evaluate(ldl.result_transform(Ydb), ldl.result_transform(l_pred))
 
-    # BERT
+    # Pretrained
+    print("PRETRAINED")
     Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
     p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
                               Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"])

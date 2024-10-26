@@ -13,9 +13,8 @@ from keras.layers import Dense, Embedding, LSTM, BatchNormalization, Bidirection
 from keras.initializers import Constant
 from sklearn.preprocessing import LabelBinarizer
 from tensorflow.keras.optimizers import SGD, Adam
-from tensorflow.keras.optimizers.schedules import PolynomialDecay
 from tensorflow.keras.layers import TextVectorization
-from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.losses import BinaryCrossentropy
 import tensorflow as tf
 # Make reproducible as much as possible
 np.random.seed(1234)
@@ -62,19 +61,18 @@ def set_vec_emb(X_train, X_dev, Y_train, Y_dev):
     return embedding_matrix, X_train_vect, X_dev_vect, Y_train_bin, Y_dev_bin
 
 
-def create_model(Y_train, emb_matrix, adam):
+def create_model(emb_matrix, adam=True):
     """Create the LSTM model with embedding matrix"""
     # Set parameters
     learning_rate = 0.005
-    loss_function = CategoricalCrossentropy()
+    loss_function = BinaryCrossentropy()
     if adam:
         optim = Adam(learning_rate=learning_rate)
     else:
         optim = SGD(learning_rate=learning_rate)
     # Take embedding dim and size from fasttext
-    embedding_dim = emb_matrix
+    embedding_dim = len(emb_matrix[0])
     num_tokens = len(emb_matrix)
-    num_labels = len(set(Y_train))
     # Build model
     model = Sequential()
     model.add(Embedding(num_tokens, embedding_dim, embeddings_initializer=Constant(emb_matrix), trainable=False))
@@ -89,14 +87,14 @@ def create_model(Y_train, emb_matrix, adam):
     model.add(Bidirectional(LSTM(16, dropout=0.3, recurrent_dropout=0.3)))
     model.add(BatchNormalization())
     # Ultimately, end with dense layer with softmax
-    model.add(Dense(input_dim=embedding_dim, units=num_labels, activation="softmax"))
+    model.add(Dense(input_dim=embedding_dim, units=1, activation="softmax"))
     # Compile model, no scores just yet
     model.compile(loss=loss_function, optimizer=optim)
     return model
 
 
 def train_model(model, X_train, Y_train, X_dev, Y_dev,
-                batch_size=32, epochs=20, verb_bool=True, es_bool=True):
+                batch_size=16, epochs=20, verb_bool=True, es_bool=True):
     """Wrapper for model fitting, with adjustable batch size, epochs,
     verbosity and early stopping
     Can also be used for the BERT classifier
