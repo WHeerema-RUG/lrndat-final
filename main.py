@@ -78,30 +78,34 @@ if __name__ == "__main__":
     pp = params["pretrained"]
 
     # Baseline
-    print("BASELINE")
-    b_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
-                                    bp["model"], bp["tfidf"])
-    evaluate(Y_dev, b_pred)
+    if bp["enable"]:
+        print("BASELINE")
+        b_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
+                                        bp["model"], bp["tfidf"])
+        evaluate(Y_dev, b_pred)
 
     # Optimized
-    print("OPTIMIZED")
-    o_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
-                                    op["model"], op["tfidf"], op["ngram"])
-    evaluate(Y_dev, o_pred)
+    if op["enable"]:
+        print("OPTIMIZED")
+        o_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
+                                        op["model"], op["tfidf"], op["ngram"])
+        evaluate(Y_dev, o_pred)
 
     # LSTM
-    print("LSTM")
-    l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
-                                                Y_train, Y_dev)
-    l_model = ldl.train_model(ldl.create_model(l_emb, lp["adam"]),
-                              Xtv, Ytb, Xdv, Ydb, batch_size=32)
-    l_pred = l_model.predict(Ydb)
-    evaluate(ldl.result_transform(Ydb), ldl.result_transform(l_pred))
+    if lp["enable"]:
+        print("LSTM")
+        l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
+                                                    Y_train, Y_dev)
+        l_model = ldl.train_model(ldl.create_model(l_emb, lp["adam"]),
+                                  Xtv, Ytb, Xdv, Ydb, batch_size=32)
+        l_pred = l_model.predict(Ydb)
+        evaluate(ldl.result_transform(Ydb), ldl.result_transform(l_pred))
 
     # Pretrained
-    print("PRETRAINED")
-    Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
-    p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
-                              Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"])
-    p_pred = p_model.predict(Ydb)
-    evaluate(ldl.result_transform(Ydb), ldl.result_transform(p_pred))
+    if pp["enable"]:
+        print("PRETRAINED")
+        Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
+        p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
+                                  Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"])
+        p_pred = p_model.predict(Ydb)
+        evaluate(ldl.result_transform(Ydb), ldl.result_transform(p_pred))
