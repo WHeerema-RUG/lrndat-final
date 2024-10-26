@@ -21,7 +21,7 @@
     "pretrained": {
         "enable": true,
         "epochs": 1,
-        "model": "bert",
+        "model": "bert-base-uncased",
         "adam": true
     }
 }

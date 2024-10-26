@@ -90,3 +90,10 @@ if __name__ == "__main__":
                               Xtv, Ytb, Xdv, Ydb)
     l_pred = l_model.predict(Ydb)
     evaluate(ldl.result_transform(Ydb), ldl.result_transform(l_pred))
+
+    # BERT
+    Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
+    p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
+                              Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"])
+    p_pred = p_model.predict(Ydb)
+    evaluate(ldl.result_transform(Ydb), ldl.result_transform(p_pred))

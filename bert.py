@@ -22,7 +22,7 @@ tf.random.set_seed(1234)
 python_random.seed(1234)
 
 
-def train_model(adam, lm="bert-base-uncased"):
+def create_model(adam, lm="bert-base-uncased"):
     """Create the BERT or derived model"""
     # Set params
     learning_rate = 0.0005
@@ -31,6 +31,17 @@ def train_model(adam, lm="bert-base-uncased"):
         optim = Adam(learning_rate=learning_rate)
     else:
         optim = SGD(learning_rate=learning_rate)
-    model = TFAutoModelForSequenceClassification.from_pretrained(lm, num_labels=6)
+    model = TFAutoModelForSequenceClassification.from_pretrained(lm,
+                                                                 num_labels=6)
     model.compile(loss=loss_function, optimizer=optim, metrics=['accuracy'])
     return model
+
+
+def set_tok(X_train, X_dev, lm="bert-base-uncased", maxlen=100):
+    """Tokenize the train and dev set"""
+    tokenizer = AutoTokenizer.from_pretrained(lm)
+    X_train_tok = tokenizer(X_train, padding=True, max_length=maxlen,
+                            truncation=True, return_tensors="np").data
+    X_dev_tok = tokenizer(X_dev, padding=True, max_length=maxlen,
+                          truncation=True, return_tensors="np").data
+    return X_train_tok, X_dev_tok
