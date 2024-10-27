@@ -2,7 +2,7 @@
 # LSTM classifier
 # Uses LSTM in a variety of configurations for higher-accuracy labels
 # Author: Wessel Heerema
-# Latest build: 26/10/2024
+# Latest build: 27/10/2024
 
 import fasttext
 import fasttext.util
@@ -39,7 +39,7 @@ def set_vec_emb(X_train, X_dev, Y_train, Y_dev):
     # Transform string labels to one-hot encodings
     encoder = LabelBinarizer()
     Y_train_bin = encoder.fit_transform(Y_train)  # Use encoder.classes_ to find mapping back
-    Y_dev_bin = encoder.fit_transform(Y_dev)
+    Y_dev_bin = encoder.transform(Y_dev)
     # Transform input to vectorized input
     X_train_vect = vectorizer(np.array([[s] for s in X_train])).numpy()
     X_dev_vect = vectorizer(np.array([[s] for s in X_dev])).numpy()
@@ -97,13 +97,13 @@ def create_model(emb_matrix, adam=True, layers=3, nodes=64, decrement=0.5):
                                      dropout=0.3, recurrent_dropout=0.3)))
         model.add(BatchNormalization())
     # Ultimately, end with dense layer with softmax
-    model.add(Dense(input_dim=embedding_dim, units=1, activation="softmax"))
+    model.add(Dense(1, activation="softmax"))
     # Compile model, no scores just yet
     model.compile(loss=loss_function, optimizer=optim)
     return model
 
 
-def train_model(model, X_train, Y_train, X_dev, Y_dev,
+def train_model(model, X_train, Y_train, X_dev, Y_dev, weights=None,
                 batch_size=16, epochs=20, verb_bool=True, es_bool=True):
     """Wrapper for model fitting, with adjustable batch size, epochs,
     verbosity and early stopping
@@ -121,6 +121,6 @@ def train_model(model, X_train, Y_train, X_dev, Y_dev,
         callback = None
     # Fit the model to our data
     model.fit(X_train, Y_train, verbose=verbose, epochs=epochs,
-              callbacks=callback, batch_size=batch_size,
+              callbacks=callback, batch_size=batch_size, class_weight=weights,
               validation_data=(X_dev, Y_dev))
     return model

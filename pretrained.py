@@ -3,7 +3,7 @@
 # Uses BERT-derived models in a variety of configurations 
 # for higher-accuracy labels
 # Author: Wessel Heerema
-# Latest build: 26/10/2024
+# Latest build: 27/10/2024
 
 import random as python_random
 import numpy as np
@@ -23,7 +23,7 @@ python_random.seed(1234)
 def create_model(adam=True, lm="bert-base-uncased"):
     """Create the BERT or derived model"""
     # Set params
-    learning_rate = 0.00005
+    learning_rate = 0.000025
     loss_function = SparseCategoricalCrossentropy(from_logits=True)
     if adam:
         optim = Adam(learning_rate=learning_rate)

@@ -3,11 +3,12 @@
 # Compare four models for binary text classification:
 # Import text, get labels, produce Precision, Recall and F1 scores
 # Author: Wessel Heerema
-# Latest build: 26/10/2024
+# Latest build: 27/10/2024
 
 import argparse
+from collections import Counter
 import json
-from numpy import argmax
+import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 
 import classic as ldc
@@ -40,7 +41,7 @@ def create_arg_parser():
 
 
 def read_corpus(corpus_file, unseen=False):
-    '''Extract docs and labels in a binary classification task'''
+    """Extract docs and labels in a binary classification task"""
     documents = []
     tok_texts = []
     labels = []
@@ -58,7 +59,7 @@ def read_corpus(corpus_file, unseen=False):
 
 
 def evaluate(gold, pred):
-    '''Perform Precision, Recall and F1-score test'''
+    """Perform Precision, Recall and F1-score test"""
     prc, rec, f1, _ = precision_recall_fscore_support(gold, pred)
     print(f"Precision: {prc}")
     print(f"Recall: {rec}")
@@ -95,21 +96,38 @@ if __name__ == "__main__":
     # LSTM
     l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
                                                 Y_train, Y_dev)
+    unique, counts = np.unique(Ydb, return_counts=True)
+    print(dict(zip(unique, counts)))
+    weights = {i: (1 / np.sum(Ytb == i)) * (len(Ytb) / 2.0) for i in range(2)}
+    print(weights)
     if lp["enable"]:
         print("LSTM")
         l_model = ldl.create_model(l_emb, lp["adam"], lp["layers"],
                                    lp["nodes"], lp["decrement"])
-        l_model = ldl.train_model(l_model, Xtv, Ytb, Xdv, Ydb, batch_size=32)
+        l_model = ldl.train_model(l_model, Xtv, Ytb, Xdv, Ydb,
+                                  batch_size=32, epochs=lp["epochs"],
+                                  weights=weights)
         l_pred = l_model.predict(Ydb)
-        evaluate(argmax(Ydb, axis=1), argmax(l_pred, axis=0))
+        unique, counts = np.unique(l_pred, return_counts=True)
+        print(dict(zip(unique, counts)))
+        evaluate(np.argmax(Ydb, axis=1), np.argmax(l_pred, axis=1))
 
     # Pretrained
     if pp["enable"]:
         print("PRETRAINED")
         Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
         p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
-                                  Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"])
+                                  Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"],
+                                  weights=weights)
         p_pred = p_model.predict(Ydb)["logits"]
-        gold_t = argmax(Ydb, axis=1)
-        pred_t = argmax(p_pred, axis=1)
-        evaluate(Ydb, pred_t)
+        procpred = np.zeros((len(p_pred), 1))
+        for i in range(len(p_pred)):
+            if p_pred[i][0] > p_pred[i][1]:
+                procpred[i] = 0
+            else:
+                procpred[i] = 1
+        #unique, counts = np.unique(mod_pred, return_counts=True)
+        #print(dict(zip(unique, counts)))
+        #gold_t = np.argmax(Ydb, axis=1)
+        #pred_t = np.argmax(p_pred, axis=1)
+        evaluate(Ydb, procpred)
