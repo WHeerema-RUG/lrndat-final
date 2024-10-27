@@ -109,9 +109,7 @@ if __name__ == "__main__":
         Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
         p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
                                   Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"])
-        p_pred = (p_model.predict(Ydb)["logits"] > 0.5).astype(int)
-        print(p_pred)
-        # ^ Thx ChatGPT!
-        #gold_t = argmax(Ydb, axis=1)
-        #pred_t = argmax(p_pred, axis=0)
-        evaluate(Ydb, p_pred)
+        p_pred = p_model.predict(Ydb)["logits"]
+        gold_t = argmax(Ydb, axis=1)
+        pred_t = argmax(p_pred, axis=1)
+        evaluate(Ydb, pred_t)

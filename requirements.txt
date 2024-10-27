@@ -1,0 +1,5 @@
+tensorflow==2.15.0
+tf-keras==2.15.0
+transformers==2.37.0
+fasttext
+scikit-learn
