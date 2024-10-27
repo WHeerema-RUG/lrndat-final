@@ -7,6 +7,7 @@
 
 import argparse
 import json
+from numpy import argmax
 from sklearn.metrics import precision_recall_fscore_support
 
 import classic as ldc
@@ -92,14 +93,15 @@ if __name__ == "__main__":
         evaluate(Y_dev, o_pred)
 
     # LSTM
+    l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
+                                                Y_train, Y_dev)
     if lp["enable"]:
         print("LSTM")
-        l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
-                                                    Y_train, Y_dev)
-        l_model = ldl.train_model(ldl.create_model(l_emb, lp["adam"]),
-                                  Xtv, Ytb, Xdv, Ydb, batch_size=32)
+        l_model = ldl.create_model(l_emb, lp["adam"], lp["layers"],
+                                   lp["nodes"], lp["decrement"])
+        l_model = ldl.train_model(l_model, Xtv, Ytb, Xdv, Ydb, batch_size=32)
         l_pred = l_model.predict(Ydb)
-        evaluate(ldl.result_transform(Ydb), ldl.result_transform(l_pred))
+        evaluate(argmax(Ydb, axis=1), argmax(l_pred, axis=0))
 
     # Pretrained
     if pp["enable"]:
@@ -107,5 +109,9 @@ if __name__ == "__main__":
         Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
         p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
                                   Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"])
-        p_pred = p_model.predict(Ydb)
-        evaluate(ldl.result_transform(Ydb), ldl.result_transform(p_pred))
+        p_pred = (p_model.predict(Ydb)["logits"] > 0.5).astype(int)
+        print(p_pred)
+        # ^ Thx ChatGPT!
+        #gold_t = argmax(Ydb, axis=1)
+        #pred_t = argmax(p_pred, axis=0)
+        evaluate(Ydb, p_pred)

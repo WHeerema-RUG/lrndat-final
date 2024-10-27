@@ -7,7 +7,7 @@
 
 import random as python_random
 import numpy as np
-from sklearn.preprocessing import LabelBinarizer
+from keras.layers import Dense
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.losses import BinaryCrossentropy
 import tensorflow as tf
@@ -30,8 +30,8 @@ def create_model(adam=True, lm="bert-base-uncased"):
     else:
         optim = SGD(learning_rate=learning_rate)
     model = TFAutoModelForSequenceClassification.from_pretrained(lm,
-                                                                 num_labels=6)
-    model.compile(loss=loss_function, optimizer=optim, metrics=['accuracy'])
+                                                                 num_labels=1)
+    model.compile(loss=loss_function, optimizer=optim)
     return model
 
 

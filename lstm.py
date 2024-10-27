@@ -61,7 +61,7 @@ def set_vec_emb(X_train, X_dev, Y_train, Y_dev):
     return embedding_matrix, X_train_vect, X_dev_vect, Y_train_bin, Y_dev_bin
 
 
-def create_model(emb_matrix, adam=True):
+def create_model(emb_matrix, adam=True, layers=3, nodes=64, decrement=0.5):
     """Create the LSTM model with embedding matrix"""
     # Set parameters
     learning_rate = 0.005
@@ -75,17 +75,27 @@ def create_model(emb_matrix, adam=True):
     num_tokens = len(emb_matrix)
     # Build model
     model = Sequential()
-    model.add(Embedding(num_tokens, embedding_dim, embeddings_initializer=Constant(emb_matrix), trainable=False))
-    # First LSTM layer (base layer with 64 units)
-    # Return full sequence for the next LSTM layer
-    model.add(Bidirectional(LSTM(64, return_sequences=True, dropout=0.3, recurrent_dropout=0.3)))
-    model.add(BatchNormalization())
-    # Second LSTM layer with 32 units    
-    model.add(Bidirectional(LSTM(32, return_sequences=True, dropout=0.3, recurrent_dropout=0.3)))
-    model.add(BatchNormalization())
-    # Third Bidirectional layer with 16 units
-    model.add(Bidirectional(LSTM(16, dropout=0.3, recurrent_dropout=0.3)))
-    model.add(BatchNormalization())
+    model.add(Embedding(num_tokens, embedding_dim,
+                        embeddings_initializer=Constant(emb_matrix),
+                        trainable=False))
+    # Add as many LSTM layers as specified
+    for i in range(layers):
+        # Decrement the node count, multiplied by no. of iterations
+        if 0 < decrement < 1:
+            new_nodes = int(nodes * decrement ** i)
+        else:
+            new_nodes = int(nodes - decrement * i)
+        if new_nodes < 1:
+            raise ValueError("New unit count for LSTM too low")
+        # Return full sequence until final layer
+        if i == (layers - 1):
+            return_seqs = False
+        else:
+            return_seqs = True
+        # Add layer
+        model.add(Bidirectional(LSTM(new_nodes, return_sequences=return_seqs,
+                                     dropout=0.3, recurrent_dropout=0.3)))
+        model.add(BatchNormalization())
     # Ultimately, end with dense layer with softmax
     model.add(Dense(input_dim=embedding_dim, units=1, activation="softmax"))
     # Compile model, no scores just yet
@@ -114,8 +124,3 @@ def train_model(model, X_train, Y_train, X_dev, Y_dev,
               callbacks=callback, batch_size=batch_size,
               validation_data=(X_dev, Y_dev))
     return model
-
-
-def result_transform(invec):
-    """Transform gold/predicted encoding into numbers"""
-    return np.argmax(invec, axis=1)
