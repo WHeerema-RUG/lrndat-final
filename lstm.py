@@ -97,7 +97,7 @@ def create_model(emb_matrix, adam=True, layers=3, nodes=64, decrement=0.5):
                                      dropout=0.3, recurrent_dropout=0.3)))
         model.add(BatchNormalization())
     # Ultimately, end with dense layer with softmax
-    model.add(Dense(1, activation="softmax"))
+    model.add(Dense(1, activation="sigmoid"))
     # Compile model, no scores just yet
     model.compile(loss=loss_function, optimizer=optim)
     return model

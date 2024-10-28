@@ -60,7 +60,29 @@ def read_corpus(corpus_file, unseen=False):
 
 def evaluate(gold, pred):
     """Perform Precision, Recall and F1-score test"""
-    prc, rec, f1, _ = precision_recall_fscore_support(gold, pred)
+    # Prepare predicted labels for testing
+    # 2D array separated by type of prediction
+    if pred.ndim == 2:
+        if pred.shape[1] == 2:
+            procpred = np.zeros((len(pred), 1))
+            for i in range(len(pred)):
+                if pred[i][0] > pred[i][1]:
+                    procpred[i] = 0
+                else:
+                    procpred[i] = 1
+        elif pred.shape[1] == 1:
+            procpred = np.zeros(len(pred))
+            for i in range(len(pred)):
+                if pred[i] > 0.5:
+                    procpred[i] = 1
+                else:
+                    procpred[i] = 0
+        else:
+            raise TypeError("Labels are incorrect shape")
+    # If standard one-dimensional array, pass straight through
+    else:
+        procpred = pred
+    prc, rec, f1, _ = precision_recall_fscore_support(gold, procpred)
     print(f"Precision: {prc}")
     print(f"Recall: {rec}")
     print(f"F1 Score: {f1}")
@@ -97,20 +119,16 @@ if __name__ == "__main__":
     l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
                                                 Y_train, Y_dev)
     unique, counts = np.unique(Ydb, return_counts=True)
-    print(dict(zip(unique, counts)))
     weights = {i: (1 / np.sum(Ytb == i)) * (len(Ytb) / 2.0) for i in range(2)}
-    print(weights)
     if lp["enable"]:
         print("LSTM")
         l_model = ldl.create_model(l_emb, lp["adam"], lp["layers"],
                                    lp["nodes"], lp["decrement"])
         l_model = ldl.train_model(l_model, Xtv, Ytb, Xdv, Ydb,
-                                  batch_size=32, epochs=lp["epochs"],
+                                  batch_size=16, epochs=lp["epochs"],
                                   weights=weights)
         l_pred = l_model.predict(Xdv)
-        unique, counts = np.unique(l_pred, return_counts=True)
-        print(dict(zip(unique, counts)))
-        evaluate(np.argmax(Ydb, axis=1), np.argmax(l_pred, axis=1))
+        evaluate(Ydb, l_pred)
 
     # Pretrained
     if pp["enable"]:
@@ -120,10 +138,4 @@ if __name__ == "__main__":
                                   Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"],
                                   weights=weights)
         p_pred = p_model.predict(Xdt)["logits"]
-        procpred = np.zeros((len(p_pred), 1))
-        for i in range(len(p_pred)):
-            if p_pred[i][0] > p_pred[i][1]:
-                procpred[i] = 0
-            else:
-                procpred[i] = 1
-        evaluate(Ydb, procpred)
+        evaluate(Ydb, p_pred)
