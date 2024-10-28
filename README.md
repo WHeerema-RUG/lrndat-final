@@ -2,6 +2,10 @@
 
 This repository is currently a work-in-progress.
 
+Run the program using this command:
+`python3 main.py`
+While there are several options available, it should be able to run out of the box if you have at least `train.tsv` and `dev.tsv` in the folder `data/`.
+
 ## CURRENT ISSUES
 Several days of work have not remedied the following issues:
 - LSTM outputs only 1 for every record.
