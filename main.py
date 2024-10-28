@@ -107,7 +107,7 @@ if __name__ == "__main__":
         l_model = ldl.train_model(l_model, Xtv, Ytb, Xdv, Ydb,
                                   batch_size=32, epochs=lp["epochs"],
                                   weights=weights)
-        l_pred = l_model.predict(Ydb)
+        l_pred = l_model.predict(Xdv)
         unique, counts = np.unique(l_pred, return_counts=True)
         print(dict(zip(unique, counts)))
         evaluate(np.argmax(Ydb, axis=1), np.argmax(l_pred, axis=1))
@@ -119,15 +119,11 @@ if __name__ == "__main__":
         p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
                                   Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"],
                                   weights=weights)
-        p_pred = p_model.predict(Ydb)["logits"]
+        p_pred = p_model.predict(Xdt)["logits"]
         procpred = np.zeros((len(p_pred), 1))
         for i in range(len(p_pred)):
             if p_pred[i][0] > p_pred[i][1]:
                 procpred[i] = 0
             else:
                 procpred[i] = 1
-        #unique, counts = np.unique(mod_pred, return_counts=True)
-        #print(dict(zip(unique, counts)))
-        #gold_t = np.argmax(Ydb, axis=1)
-        #pred_t = np.argmax(p_pred, axis=1)
         evaluate(Ydb, procpred)
