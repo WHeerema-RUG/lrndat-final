@@ -3,7 +3,7 @@
 # Uses BERT-derived models in a variety of configurations 
 # for higher-accuracy labels
 # Author: Wessel Heerema
-# Latest build: 27/10/2024
+# Latest build: 29/10/2024
 
 import random as python_random
 import numpy as np

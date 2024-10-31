@@ -3,7 +3,7 @@
 # Compare four models for binary text classification:
 # Import text, get labels, produce Precision, Recall and F1 scores
 # Author: Wessel Heerema
-# Latest build: 27/10/2024
+# Latest build: 29/10/2024
 
 import argparse
 from collections import Counter
@@ -42,6 +42,7 @@ def create_arg_parser():
 
 def read_corpus(corpus_file, unseen=False):
     """Extract docs and labels in a binary classification task"""
+    # Initialize output lists
     documents = []
     tok_texts = []
     labels = []
@@ -49,10 +50,12 @@ def read_corpus(corpus_file, unseen=False):
         for line in in_file:
             tokens = line.strip().split()
             if not unseen:
+                # Labeled
                 tok_texts.append(tokens[:-1])
                 documents.append(" ".join(tokens[:-1]).strip())
                 labels.append(tokens[-1])
             else:
+                # Unlabeled
                 tok_texts.append(tokens)
                 documents.append(" ".join(tokens[:-1]).strip())
     return documents, tok_texts, labels

@@ -2,7 +2,7 @@
 # LSTM classifier
 # Uses LSTM in a variety of configurations for higher-accuracy labels
 # Author: Wessel Heerema
-# Latest build: 27/10/2024
+# Latest build: 29/10/2024
 
 import fasttext
 import fasttext.util
