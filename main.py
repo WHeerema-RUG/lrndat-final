@@ -24,9 +24,9 @@ def create_arg_parser():
     parser.add_argument("-d", "--dev_file", default='data/dev.tsv', type=str,
                         help="Dev file to evaluate on"
                         "(default data/dev.tsv)")
-    parser.add_argument("-t", "--test_file", default='data/test.tsv', type=str,
+    parser.add_argument("-t", "--test_file", default='none', type=str,
                         help="Test file to evaluate on"
-                        "(default data/test.tsv)")
+                        "(default none)")
     parser.add_argument("-o", "--out_file", default='out.txt', type=str,
                         help="Output file for predicted labels"
                         "(default out.txt)")
@@ -94,6 +94,11 @@ if __name__ == "__main__":
     # Read files
     X_train, X_traint, Y_train = read_corpus(args.train_file)
     X_dev, X_devt, Y_dev = read_corpus(args.dev_file)
+    if args.test_file == "none":
+        test_data = False
+    else:
+        X_test, X_testt, Y_test = read_corpus(args.test_file)
+        test_data = True
     with open(args.model_params, "r") as fp:
         params = json.load(fp)
     bp = params["baseline"]
@@ -101,25 +106,46 @@ if __name__ == "__main__":
     lp = params["lstm"]
     pp = params["pretrained"]
 
+    # Initialize test data if available
+    if test_data:
+        c_testable = X_testt
+        c_gold = Y_test
+    else:
+        c_testable = X_devt
+        c_gold = Y_dev
+
     # Baseline
     if bp["enable"]:
         print("BASELINE")
-        b_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
+        b_pred = ldc.classic_classifier(X_traint, Y_train, c_testable,
                                         bp["model"], bp["tfidf"])
-        evaluate(Y_dev, b_pred)
+        evaluate(c_gold, b_pred)
 
     # Optimized
     if op["enable"]:
         print("OPTIMIZED")
-        o_pred = ldc.classic_classifier(X_traint, Y_train, X_devt,
+        o_pred = ldc.classic_classifier(X_traint, Y_train, c_testable,
                                         op["model"], op["tfidf"], op["ngram"])
-        evaluate(Y_dev, o_pred)
+        evaluate(c_gold, o_pred)
+
+    # Preprocess data
+    l_emb, Xtv, Xdv, Ytb, Ydb,\
+    enc, vec = ldl.set_vec_emb(X_train, X_dev, Y_train, Y_dev)
+    Xtt, Xdt, tok = ldb.set_tok(X_train, X_dev, pp["model"])
+    # Preprocess test data if available
+    if test_data:
+        l_testable = vec(np.array([[s] for s in X_test])).numpy()
+        p_testable = tok(X_test, padding=True, max_length=100,
+                        truncation=True, return_tensors="tf").data
+        n_gold = enc.transform(Y_test)
+    else:
+        l_testable = Xdv
+        p_testable = Xdt
+        n_gold = Ydb
+    # Get weights from training set
+    weights = {i: (1 / np.sum(Ytb == i)) * (len(Ytb) / 2.0) for i in range(2)}
 
     # LSTM
-    l_emb, Xtv, Xdv, Ytb, Ydb = ldl.set_vec_emb(X_train, X_dev,
-                                                Y_train, Y_dev)
-    unique, counts = np.unique(Ydb, return_counts=True)
-    weights = {i: (1 / np.sum(Ytb == i)) * (len(Ytb) / 2.0) for i in range(2)}
     if lp["enable"]:
         print("LSTM")
         l_model = ldl.create_model(l_emb, lp["adam"], lp["layers"],
@@ -127,15 +153,14 @@ if __name__ == "__main__":
         l_model = ldl.train_model(l_model, Xtv, Ytb, Xdv, Ydb,
                                   batch_size=16, epochs=lp["epochs"],
                                   weights=weights)
-        l_pred = l_model.predict(Xdv)
-        evaluate(Ydb, l_pred)
+        l_pred = l_model.predict(l_testable)
+        evaluate(n_gold, l_pred)
 
     # Pretrained
     if pp["enable"]:
         print("PRETRAINED")
-        Xtt, Xdt = ldb.set_tok(X_train, X_dev, pp["model"])
         p_model = ldl.train_model(ldb.create_model(pp["adam"], pp["model"]),
                                   Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"],
                                   weights=weights)
-        p_pred = p_model.predict(Xdt)["logits"]
-        evaluate(Ydb, p_pred)
+        p_pred = p_model.predict(p_testable)["logits"]
+        evaluate(n_gold, p_pred)

@@ -42,4 +42,4 @@ def set_tok(X_train, X_dev, lm="bert-base-uncased", maxlen=100):
                             truncation=True, return_tensors="tf").data
     X_dev_tok = tokenizer(X_dev, padding=True, max_length=maxlen,
                           truncation=True, return_tensors="tf").data
-    return X_train_tok, X_dev_tok
+    return X_train_tok, X_dev_tok, tokenizer

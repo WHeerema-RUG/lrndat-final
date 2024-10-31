@@ -38,11 +38,11 @@ def set_vec_emb(X_train, X_dev, Y_train, Y_dev):
 
     # Transform string labels to one-hot encodings
     encoder = LabelBinarizer()
-    Y_train_bin = encoder.fit_transform(Y_train)  # Use encoder.classes_ to find mapping back
-    Y_dev_bin = encoder.transform(Y_dev)
+    Ytrb = encoder.fit_transform(Y_train)  # Use encoder.classes_ to find mapping back
+    Ydb = encoder.transform(Y_dev)
     # Transform input to vectorized input
-    X_train_vect = vectorizer(np.array([[s] for s in X_train])).numpy()
-    X_dev_vect = vectorizer(np.array([[s] for s in X_dev])).numpy()
+    Xtrv = vectorizer(np.array([[s] for s in X_train])).numpy()
+    Xdv = vectorizer(np.array([[s] for s in X_dev])).numpy()
 
     # Generate matrix
     num_tokens = len(voc) + 2
@@ -58,7 +58,7 @@ def set_vec_emb(X_train, X_dev, Y_train, Y_dev):
             embedding_matrix[i] = embedding_vector
 
     # Return final results
-    return embedding_matrix, X_train_vect, X_dev_vect, Y_train_bin, Y_dev_bin
+    return embedding_matrix, Xtrv, Xdv, Ytrb, Ydb, encoder, vectorizer
 
 
 def create_model(emb_matrix, adam=True, layers=3, nodes=64, decrement=0.5):
