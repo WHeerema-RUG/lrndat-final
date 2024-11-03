@@ -27,11 +27,9 @@ def create_arg_parser():
     parser.add_argument("-t", "--test_file", default='none', type=str,
                         help="Test file to evaluate on"
                         "(default none)")
-    parser.add_argument("-o", "--out_file", default='out.txt', type=str,
+    parser.add_argument("-o", "--out_file", default='out.tsv', type=str,
                         help="Output file for predicted labels"
-                        "(default out.txt)")
-    parser.add_argument("-od", "--dev_out", action="store_true",
-                        help="Output dev labels instead of test")
+                        "(default out.tsv)")
     parser.add_argument("-p", "--model_params", default='options.json',
                         type=str,
                         help="Set hyperparameters per model using a JSON file"
@@ -89,6 +87,7 @@ def evaluate(gold, pred):
     print(f"Precision: {prc}")
     print(f"Recall: {rec}")
     print(f"F1 Score: {f1}")
+    return procpred
 
 
 if __name__ == "__main__":
@@ -108,12 +107,16 @@ if __name__ == "__main__":
     op = params["optimized"]
     lp = params["lstm"]
     pp = params["pretrained"]
+    outmodel = params["output"]
+    out_pred = None
 
     # Initialize test data if available
     if test_data:
+        out_feat = X_test
         c_testable = X_testt
         c_gold = Y_test
     else:
+        out_feat = X_dev
         c_testable = X_devt
         c_gold = Y_dev
 
@@ -122,14 +125,18 @@ if __name__ == "__main__":
         print("BASELINE")
         b_pred = ldc.classic_classifier(X_traint, Y_train, c_testable,
                                         bp["model"], bp["tfidf"])
-        evaluate(c_gold, b_pred)
+        b_procpred = evaluate(c_gold, b_pred)
+        if outmodel == "baseline":
+            out_pred = b_procpred
 
     # Optimized
     if op["enable"]:
         print("OPTIMIZED")
         o_pred = ldc.classic_classifier(X_traint, Y_train, c_testable,
                                         op["model"], op["tfidf"], op["ngram"])
-        evaluate(c_gold, o_pred)
+        o_procpred = evaluate(c_gold, o_pred)
+        if outmodel == "optimized":
+            out_pred = o_procpred
 
     # Preprocess data
     l_emb, Xtv, Xdv, Ytb, Ydb,\
@@ -157,7 +164,9 @@ if __name__ == "__main__":
                                   batch_size=16, epochs=lp["epochs"],
                                   weights=weights)
         l_pred = l_model.predict(l_testable)
-        evaluate(n_gold, l_pred)
+        l_procpred = evaluate(n_gold, l_pred)
+        if outmodel == "lstm":
+            out_pred = l_procpred
 
     # Pretrained
     if pp["enable"]:
@@ -166,4 +175,16 @@ if __name__ == "__main__":
                                   Xtt, Ytb, Xdt, Ydb, epochs=pp["epochs"],
                                   weights=weights)
         p_pred = p_model.predict(p_testable)["logits"]
-        evaluate(n_gold, p_pred)
+        p_procpred = evaluate(n_gold, p_pred)
+        if outmodel == "pretrained":
+            out_pred = p_procpred
+    
+    # Output
+    if out_pred is None:
+        raise UnboundLocalError("Model specified for output was not run")
+    # Retrieve text label for each prediction
+    relabeled = [enc.classes_[int(label[0])] for label in out_pred]
+    out_list = [out_feat[i] + "\t" + relabeled[i]
+                for i in range(len(out_pred))]
+    with open(args.out_file, "w") as outfile:
+        outfile.write("\n".join(out_list))

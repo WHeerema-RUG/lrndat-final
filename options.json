@@ -21,7 +21,8 @@
     "pretrained": {
         "enable": true,
         "epochs": 1,
-        "model": "bert-base-uncased",
+        "model": "FacebookAI/roberta-base",
         "adam": true
-    }
+    },
+    "output": "pretrained"
 }
